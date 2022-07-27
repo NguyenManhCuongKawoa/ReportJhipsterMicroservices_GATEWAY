@@ -5,8 +5,10 @@ import static org.springframework.security.web.server.util.matcher.ServerWebExch
 import com.babyboy.social.security.AuthoritiesConstants;
 import com.babyboy.social.security.jwt.JWTFilter;
 import com.babyboy.social.security.jwt.TokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
@@ -36,6 +38,9 @@ public class SecurityConfiguration {
     private final TokenProvider tokenProvider;
 
     private final SecurityProblemSupport problemSupport;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     public SecurityConfiguration(
         ReactiveUserDetailsService userDetailsService,
@@ -73,7 +78,7 @@ public class SecurityConfiguration {
             )))
             .csrf()
                 .disable()
-            .addFilterAt(new JWTFilter(tokenProvider), SecurityWebFiltersOrder.HTTP_BASIC)
+            .addFilterAt(new JWTFilter(tokenProvider, redisTemplate), SecurityWebFiltersOrder.HTTP_BASIC)
             .authenticationManager(reactiveAuthenticationManager())
             .exceptionHandling()
                 .accessDeniedHandler(problemSupport)

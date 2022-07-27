@@ -15,11 +15,18 @@
 # ===================================================================
 
 ---
-# Conditionally disable springdoc on missing api-docs profile
+# Conditionally disable springdoc on missing api-docs profile 2592000
 spring:
   config:
     activate:
       on-profile: '!api-docs'
+  redis:
+    database: 0
+    host: localhost
+    port: 6379
+    password:
+    timeout: 60000
+
 springdoc:
   api-docs:
     enabled: false
@@ -96,7 +103,7 @@ management:
       mode: full
   health:
     mail:
-      enabled: false # When using the MailService, configure an SMTP server and set this to true
+      enabled: true # When using the MailService, configure an SMTP server and set this to true
   metrics:
     export:
       # Prometheus is the default metrics backend
@@ -179,6 +186,18 @@ spring:
   output:
     ansi:
       console-available: true
+  mail:
+    default-encoding: UTF-8
+    host: smtp.gmail.com
+    port: 587
+    username: improveenglishnmc@gmail.com
+    password: wofmwcrkgbkhzpll
+    protocol: smtp
+    tls: true
+    properties.mail.smtp:
+      auth: true
+      starttls.enable: true
+      ssl.trust: smtp.gmail.com
 
 server:
   servlet:
@@ -212,7 +231,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: gatewaysocial@localhost
+    from: improveenglishnmc@gmail.com
   api-docs:
     default-include-pattern: ${server.servlet.context-path:}/api/**
     management-include-pattern: ${server.servlet.context-path:}/management/**

@@ -54,11 +54,11 @@ spring:
   liquibase:
     contexts: prod
     url: jdbc:mysql://localhost:3306/gatewaysocial?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
-  mail:
-    host: localhost
-    port: 25
-    username:
-    password:
+  #  mail:
+  #    host: localhost
+  #    port: 25
+  #    username:
+  #    password:
   r2dbc:
     url: r2dbc:mysql://localhost:3306/gatewaysocial?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
     username: root

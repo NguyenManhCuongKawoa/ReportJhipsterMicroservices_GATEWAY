@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,8 @@ import tech.jhipster.config.JHipsterProperties;
 class JWTFilterTest {
 
     private TokenProvider tokenProvider;
+
+    private RedisTemplate redisTemplate;
 
     private JWTFilter jwtFilter;
 
@@ -38,7 +41,7 @@ class JWTFilterTest {
         ReflectionTestUtils.setField(tokenProvider, "key", Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret)));
 
         ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", 60000);
-        jwtFilter = new JWTFilter(tokenProvider);
+        jwtFilter = new JWTFilter(tokenProvider, redisTemplate);
     }
 
     @Test
