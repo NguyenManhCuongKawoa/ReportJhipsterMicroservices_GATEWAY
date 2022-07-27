@@ -190,8 +190,8 @@ spring:
     default-encoding: UTF-8
     host: smtp.gmail.com
     port: 587
-    username: improveenglishnmc@gmail.com
-    password: wofmwcrkgbkhzpll
+    username: support@aladintech.co
+    password: vabidenbblanfqrx
     protocol: smtp
     tls: true
     properties.mail.smtp:
@@ -231,7 +231,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: improveenglishnmc@gmail.com
+    from: support@aladintech.co
   api-docs:
     default-include-pattern: ${server.servlet.context-path:}/api/**
     management-include-pattern: ${server.servlet.context-path:}/management/**
