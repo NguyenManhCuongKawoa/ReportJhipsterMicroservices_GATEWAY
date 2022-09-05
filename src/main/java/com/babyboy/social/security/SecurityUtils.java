@@ -1,8 +1,11 @@
 package com.babyboy.social.security;
 
-import java.util.Arrays;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -102,5 +105,17 @@ public final class SecurityUtils {
      */
     public static Mono<Boolean> hasCurrentUserThisAuthority(String authority) {
         return hasCurrentUserAnyOfAuthorities(authority);
+    }
+
+    public static List<GrantedAuthority> extractAuthorityFromClaims(Map<String, Object> claims) {
+        return mapRolesToGrantedAuthorities(getRolesFromClaims(claims));
+    }
+
+    private static Collection<String> getRolesFromClaims(Map<String, Object> claims) {
+        return (Collection<String>) claims.getOrDefault("groups", claims.getOrDefault("roles", new ArrayList<>()));
+    }
+
+    private static List<GrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
+        return roles.stream().filter(role -> role.startsWith("ROLE_")).map(SimpleGrantedAuthority::new).collect(Collectors.toList());
     }
 }
