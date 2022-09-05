@@ -2,7 +2,6 @@ package com.babyboy.social.web.rest;
 
 import com.babyboy.social.repository.UserRepository;
 import com.babyboy.social.security.SecurityUtils;
-import com.babyboy.social.service.MailService;
 import com.babyboy.social.service.UserService;
 import com.babyboy.social.service.dto.AdminUserDTO;
 import com.babyboy.social.service.dto.PasswordChangeDTO;
@@ -40,12 +39,10 @@ public class AccountResource {
 
     private final UserService userService;
 
-    private final MailService mailService;
 
-    public AccountResource(UserRepository userRepository, UserService userService, MailService mailService) {
+    public AccountResource(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
         this.userService = userService;
-        this.mailService = mailService;
     }
 
     /**
@@ -56,14 +53,6 @@ public class AccountResource {
      * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already used.
      * @throws LoginAlreadyUsedException {@code 400 (Bad Request)} if the login is already used.
      */
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Void> registerAccount(@Valid @RequestBody ManagedUserVM managedUserVM) {
-        if (isPasswordLengthInvalid(managedUserVM.getPassword())) {
-            throw new InvalidPasswordException();
-        }
-        return userService.registerUser(managedUserVM, managedUserVM.getPassword()).doOnSuccess(mailService::sendActivationEmail).then();
-    }
 
     /**
      * {@code GET  /activate} : activate the registered user.
@@ -160,21 +149,7 @@ public class AccountResource {
      *
      * @param mail the mail of the user.
      */
-    @PostMapping(path = "/account/reset-password/init")
-    public Mono<Void> requestPasswordReset(@RequestBody String mail) {
-        return userService
-            .requestPasswordReset(mail)
-            .doOnSuccess(user -> {
-                if (Objects.nonNull(user)) {
-                    mailService.sendPasswordResetMail(user);
-                } else {
-                    // Pretend the request has been successful to prevent checking which emails really exist
-                    // but log that an invalid attempt has been made
-                    log.warn("Password reset requested for non existing mail");
-                }
-            })
-            .then();
-    }
+
 
     /**
      * {@code POST   /account/reset-password/finish} : Finish to reset the password of the user.

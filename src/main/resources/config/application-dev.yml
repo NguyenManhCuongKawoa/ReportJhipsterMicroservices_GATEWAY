@@ -49,11 +49,7 @@ spring:
     # Remove 'faker' if you do not want the sample data to be loaded automatically
     contexts: dev, faker
     url: jdbc:mysql://localhost:3306/reportsocial?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
-  #  mail:
-  #    host: localhost
-  #    port: 25
-  #    username:
-  #    password:
+
   messages:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
   r2dbc:

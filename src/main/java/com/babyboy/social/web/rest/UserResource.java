@@ -4,7 +4,6 @@ import com.babyboy.social.config.Constants;
 import com.babyboy.social.domain.User;
 import com.babyboy.social.repository.UserRepository;
 import com.babyboy.social.security.AuthoritiesConstants;
-import com.babyboy.social.service.MailService;
 import com.babyboy.social.service.UserService;
 import com.babyboy.social.service.dto.AdminUserDTO;
 import com.babyboy.social.web.rest.errors.BadRequestAlertException;
@@ -89,12 +88,10 @@ public class UserResource {
 
     private final UserRepository userRepository;
 
-    private final MailService mailService;
 
-    public UserResource(UserService userService, UserRepository userRepository, MailService mailService) {
+    public UserResource(UserService userService, UserRepository userRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
-        this.mailService = mailService;
     }
 
     /**
@@ -133,7 +130,6 @@ public class UserResource {
                 }
                 return userService.createUser(userDTO);
             })
-            .doOnSuccess(mailService::sendCreationEmail)
             .map(user -> {
                 try {
                     return ResponseEntity

@@ -20,12 +20,6 @@ spring:
   config:
     activate:
       on-profile: '!api-docs'
-  redis:
-    database: 0
-    host: localhost
-    port: 6379
-    password:
-    timeout: 60000
 
 springdoc:
   api-docs:
@@ -135,7 +129,7 @@ spring:
   cloud:
     gateway:
       default-filters:
-        - JWTRelay
+        - TokenRelay
       discovery:
         locator:
           enabled: true
@@ -186,18 +180,17 @@ spring:
   output:
     ansi:
       console-available: true
-  mail:
-    default-encoding: UTF-8
-    host: smtp.gmail.com
-    port: 587
-    username: support@aladintech.co
-    password: vabidenbblanfqrx
-    protocol: smtp
-    tls: true
-    properties.mail.smtp:
-      auth: true
-      starttls.enable: true
-      ssl.trust: smtp.gmail.com
+  security:
+    oauth2:
+      client:
+        provider:
+          oidc:
+            issuer-uri: http://localhost:8080/realms/second-report
+        registration:
+          oidc:
+            client-id: second-report
+            client-secret: DI1enuKptogbRXrZl5snCVooUZkD9wP9
+            scope: openid,profile,email
 
 server:
   servlet:
@@ -246,6 +239,10 @@ jhipster:
     license-url:
   security:
     content-security-policy: "default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+    oauth2:
+      audience:
+        - account
+        - api://default
 # ===================================================================
 # Application specific properties
 # Add your own application properties here, see the ApplicationProperties class

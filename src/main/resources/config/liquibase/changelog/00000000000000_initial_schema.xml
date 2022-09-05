@@ -12,6 +12,7 @@
         The initial schema has the '00000000000001' id, so that it is over-written if we re-generate it.
     -->
     <changeSet id="00000000000001" author="jhipster">
+        <validCheckSum>8:ff7945f9f8b5fe107af0b3369b63d782</validCheckSum>
         <createTable tableName="user">
             <column name="id" type="bigint" autoIncrement="true" startWith="1050">
                 <constraints primaryKey="true" nullable="false"/>
