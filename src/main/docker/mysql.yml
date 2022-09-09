@@ -2,8 +2,9 @@
 version: '3.8'
 services:
   gatewaysocial-mysql:
-    image: mysql:8.0.27
-    # volumes:
+    image: mysql:8.0.30
+    volumes:
+      - ./config/mysql:/etc/mysql/conf.d
     #   - ~/volumes/jhipster/gatewaysocial/mysql/:/var/lib/mysql/
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes

@@ -1,21 +1,15 @@
 package com.babyboy.social.web.rest;
 
-import com.babyboy.social.repository.UserRepository;
 import com.babyboy.social.security.SecurityUtils;
 import com.babyboy.social.service.UserService;
 import com.babyboy.social.service.dto.AdminUserDTO;
-import com.babyboy.social.service.dto.PasswordChangeDTO;
-import com.babyboy.social.web.rest.errors.*;
-import com.babyboy.social.web.rest.vm.KeyAndPasswordVM;
-import com.babyboy.social.web.rest.vm.ManagedUserVM;
 import java.security.Principal;
-import java.util.Objects;
-import javax.validation.Valid;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -28,6 +22,8 @@ public class AccountResource {
 
     private static class AccountResourceException extends RuntimeException {
 
+        private static final long serialVersionUID = 1L;
+
         private AccountResourceException(String message) {
             super(message);
         }
@@ -35,37 +31,27 @@ public class AccountResource {
 
     private final Logger log = LoggerFactory.getLogger(AccountResource.class);
 
-    private final UserRepository userRepository;
-
     private final UserService userService;
 
-
-    public AccountResource(UserRepository userRepository, UserService userService) {
-        this.userRepository = userRepository;
+    public AccountResource(UserService userService) {
         this.userService = userService;
     }
 
     /**
-     * {@code POST  /register} : register the user.
+     * {@code GET  /account} : get the current user.
      *
-     * @param managedUserVM the managed user View Model.
-     * @throws InvalidPasswordException {@code 400 (Bad Request)} if the password is incorrect.
-     * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already used.
-     * @throws LoginAlreadyUsedException {@code 400 (Bad Request)} if the login is already used.
+     * @param principal the current user; resolves to {@code null} if not authenticated.
+     * @return the current user.
+     * @throws AccountResourceException {@code 500 (Internal Server Error)} if the user couldn't be returned.
      */
-
-    /**
-     * {@code GET  /activate} : activate the registered user.
-     *
-     * @param key the activation key.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the user couldn't be activated.
-     */
-    @GetMapping("/activate")
-    public Mono<Void> activateAccount(@RequestParam(value = "key") String key) {
-        return userService
-            .activateRegistration(key)
-            .switchIfEmpty(Mono.error(new AccountResourceException("No user was found for this activation key")))
-            .then();
+    @GetMapping("/account")
+    @SuppressWarnings("unchecked")
+    public Mono<AdminUserDTO> getAccount(Principal principal) {
+        if (principal instanceof AbstractAuthenticationToken) {
+            return userService.getUserFromAuthentication((AbstractAuthenticationToken) principal);
+        } else {
+            throw new AccountResourceException("User could not be found");
+        }
     }
 
     /**
@@ -78,102 +64,5 @@ public class AccountResource {
     public Mono<String> isAuthenticated(ServerWebExchange request) {
         log.debug("REST request to check if the current user is authenticated");
         return request.getPrincipal().map(Principal::getName);
-    }
-
-    /**
-     * {@code GET  /account} : get the current user.
-     *
-     * @return the current user.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the user couldn't be returned.
-     */
-    @GetMapping("/account")
-    public Mono<AdminUserDTO> getAccount() {
-        return userService
-            .getUserWithAuthorities()
-            .map(AdminUserDTO::new)
-            .switchIfEmpty(Mono.error(new AccountResourceException("User could not be found")));
-    }
-
-    /**
-     * {@code POST  /account} : update the current user information.
-     *
-     * @param userDTO the current user information.
-     * @throws EmailAlreadyUsedException {@code 400 (Bad Request)} if the email is already used.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the user login wasn't found.
-     */
-    @PostMapping("/account")
-    public Mono<Void> saveAccount(@Valid @RequestBody AdminUserDTO userDTO) {
-        return SecurityUtils
-            .getCurrentUserLogin()
-            .switchIfEmpty(Mono.error(new AccountResourceException("Current user login not found")))
-            .flatMap(userLogin ->
-                userRepository
-                    .findOneByEmailIgnoreCase(userDTO.getEmail())
-                    .filter(existingUser -> !existingUser.getLogin().equalsIgnoreCase(userLogin))
-                    .hasElement()
-                    .flatMap(emailExists -> {
-                        if (emailExists) {
-                            throw new EmailAlreadyUsedException();
-                        }
-                        return userRepository.findOneByLogin(userLogin);
-                    })
-            )
-            .switchIfEmpty(Mono.error(new AccountResourceException("User could not be found")))
-            .flatMap(user ->
-                userService.updateUser(
-                    userDTO.getFirstName(),
-                    userDTO.getLastName(),
-                    userDTO.getEmail(),
-                    userDTO.getLangKey(),
-                    userDTO.getImageUrl()
-                )
-            );
-    }
-
-    /**
-     * {@code POST  /account/change-password} : changes the current user's password.
-     *
-     * @param passwordChangeDto current and new password.
-     * @throws InvalidPasswordException {@code 400 (Bad Request)} if the new password is incorrect.
-     */
-    @PostMapping(path = "/account/change-password")
-    public Mono<Void> changePassword(@RequestBody PasswordChangeDTO passwordChangeDto) {
-        if (isPasswordLengthInvalid(passwordChangeDto.getNewPassword())) {
-            throw new InvalidPasswordException();
-        }
-        return userService.changePassword(passwordChangeDto.getCurrentPassword(), passwordChangeDto.getNewPassword());
-    }
-
-    /**
-     * {@code POST   /account/reset-password/init} : Send an email to reset the password of the user.
-     *
-     * @param mail the mail of the user.
-     */
-
-
-    /**
-     * {@code POST   /account/reset-password/finish} : Finish to reset the password of the user.
-     *
-     * @param keyAndPassword the generated key and the new password.
-     * @throws InvalidPasswordException {@code 400 (Bad Request)} if the password is incorrect.
-     * @throws RuntimeException {@code 500 (Internal Server Error)} if the password could not be reset.
-     */
-    @PostMapping(path = "/account/reset-password/finish")
-    public Mono<Void> finishPasswordReset(@RequestBody KeyAndPasswordVM keyAndPassword) {
-        if (isPasswordLengthInvalid(keyAndPassword.getNewPassword())) {
-            throw new InvalidPasswordException();
-        }
-        return userService
-            .completePasswordReset(keyAndPassword.getNewPassword(), keyAndPassword.getKey())
-            .switchIfEmpty(Mono.error(new AccountResourceException("No user was found for this reset key")))
-            .then();
-    }
-
-    private static boolean isPasswordLengthInvalid(String password) {
-        return (
-            StringUtils.isEmpty(password) ||
-            password.length() < ManagedUserVM.PASSWORD_MIN_LENGTH ||
-            password.length() > ManagedUserVM.PASSWORD_MAX_LENGTH
-        );
     }
 }

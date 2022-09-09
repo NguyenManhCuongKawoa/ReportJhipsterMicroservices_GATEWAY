@@ -1,13 +1,16 @@
 package com.babyboy.social.service.dto;
 
 import com.babyboy.social.domain.User;
+import java.io.Serializable;
 
 /**
  * A DTO representing a user, with only the public attributes.
  */
-public class UserDTO {
+public class UserDTO implements Serializable {
 
-    private Long id;
+    private static final long serialVersionUID = 1L;
+
+    private String id;
 
     private String login;
 
@@ -21,11 +24,11 @@ public class UserDTO {
         this.login = user.getLogin();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

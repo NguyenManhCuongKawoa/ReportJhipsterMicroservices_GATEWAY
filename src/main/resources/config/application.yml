@@ -15,12 +15,11 @@
 # ===================================================================
 
 ---
-# Conditionally disable springdoc on missing api-docs profile 2592000
+# Conditionally disable springdoc on missing api-docs profile
 spring:
   config:
     activate:
       on-profile: '!api-docs'
-
 springdoc:
   api-docs:
     enabled: false
@@ -95,9 +94,11 @@ management:
   info:
     git:
       mode: full
+    env:
+      enabled: true
   health:
     mail:
-      enabled: true # When using the MailService, configure an SMTP server and set this to true
+      enabled: false # When using the MailService, configure an SMTP server and set this to true
   metrics:
     export:
       # Prometheus is the default metrics backend
@@ -163,7 +164,6 @@ spring:
     basename: i18n/messages
   main:
     allow-bean-definition-overriding: true
-    allow-circular-references: true
   task:
     execution:
       thread-name-prefix: gatewaysocial-task-
@@ -190,7 +190,7 @@ spring:
           oidc:
             client-id: second-report
             client-secret: DI1enuKptogbRXrZl5snCVooUZkD9wP9
-            scope: openid,profile,email
+            scope: openid, profile, email, offline_access # last one for refresh tokens
 
 server:
   servlet:
@@ -224,7 +224,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: support@aladintech.co
+    from: gatewaysocial@localhost
   api-docs:
     default-include-pattern: ${server.servlet.context-path:}/api/**
     management-include-pattern: ${server.servlet.context-path:}/management/**

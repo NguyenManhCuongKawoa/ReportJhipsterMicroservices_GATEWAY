@@ -5,16 +5,17 @@ import static org.springframework.data.relational.core.query.Query.query;
 
 import com.babyboy.social.domain.Authority;
 import com.babyboy.social.domain.User;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.transaction.Transactional;
 import org.apache.commons.beanutils.BeanComparator;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.relational.core.sql.Column;
@@ -31,15 +32,7 @@ import reactor.util.function.Tuples;
  * Spring Data R2DBC repository for the {@link User} entity.
  */
 @Repository
-public interface UserRepository extends R2dbcRepository<User, Long>, UserRepositoryInternal {
-    Mono<User> findOneByActivationKey(String activationKey);
-
-    Flux<User> findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(LocalDateTime dateTime);
-
-    Mono<User> findOneByResetKey(String resetKey);
-
-    Mono<User> findOneByEmailIgnoreCase(String email);
-
+public interface UserRepository extends R2dbcRepository<User, String>, UserRepositoryInternal {
     Mono<User> findOneByLogin(String login);
 
     Flux<User> findAllByIdNotNull(Pageable pageable);
@@ -48,24 +41,24 @@ public interface UserRepository extends R2dbcRepository<User, Long>, UserReposit
 
     Mono<Long> count();
 
-    @Query("INSERT INTO user_authority VALUES(:userId, :authority)")
-    Mono<Void> saveUserAuthority(Long userId, String authority);
+    @Query("INSERT INTO jhi_user_authority VALUES(:userId, :authority)")
+    Mono<Void> saveUserAuthority(String userId, String authority);
 
-    @Query("DELETE FROM user_authority")
+    @Query("DELETE FROM jhi_user_authority")
+    @Transactional
+    @Modifying
     Mono<Void> deleteAllUserAuthorities();
 
-    @Query("DELETE FROM user_authority WHERE user_id = :userId")
-    Mono<Void> deleteUserAuthorities(Long userId);
+    @Query("DELETE FROM jhi_user_authority WHERE user_id = :userId")
+    @Transactional
+    @Modifying
+    Mono<Void> deleteUserAuthorities(String userId);
 }
 
-interface DeleteExtended<T> {
-    Mono<Void> delete(T user);
-}
-
-interface UserRepositoryInternal extends DeleteExtended<User> {
+interface UserRepositoryInternal {
     Mono<User> findOneWithAuthoritiesByLogin(String login);
 
-    Mono<User> findOneWithAuthoritiesByEmailIgnoreCase(String email);
+    Mono<User> create(User user);
 
     Flux<User> findAllWithAuthorities(Pageable pageable);
 }
@@ -88,11 +81,6 @@ class UserRepositoryInternalImpl implements UserRepositoryInternal {
     }
 
     @Override
-    public Mono<User> findOneWithAuthoritiesByEmailIgnoreCase(String email) {
-        return findOneWithAuthoritiesBy("email", email.toLowerCase());
-    }
-
-    @Override
     public Flux<User> findAllWithAuthorities(Pageable pageable) {
         String property = pageable.getSort().stream().map(Sort.Order::getProperty).findFirst().orElse("id");
         String direction = String.valueOf(
@@ -102,7 +90,7 @@ class UserRepositoryInternalImpl implements UserRepositoryInternal {
         long size = pageable.getPageSize();
 
         return db
-            .sql("SELECT * FROM user u LEFT JOIN user_authority ua ON u.id=ua.user_id")
+            .sql("SELECT * FROM jhi_user u LEFT JOIN jhi_user_authority ua ON u.id=ua.user_id")
             .map((row, metadata) ->
                 Tuples.of(r2dbcConverter.read(User.class, row, metadata), Optional.ofNullable(row.get("authority_name", String.class)))
             )
@@ -119,17 +107,13 @@ class UserRepositoryInternalImpl implements UserRepositoryInternal {
     }
 
     @Override
-    public Mono<Void> delete(User user) {
-        return db
-            .sql("DELETE FROM user_authority WHERE user_id = :userId")
-            .bind("userId", user.getId())
-            .then()
-            .then(r2dbcEntityTemplate.delete(User.class).matching(query(where("id").is(user.getId()))).all().then());
+    public Mono<User> create(User user) {
+        return r2dbcEntityTemplate.insert(User.class).using(user).defaultIfEmpty(user);
     }
 
     private Mono<User> findOneWithAuthoritiesBy(String fieldName, Object fieldValue) {
         return db
-            .sql("SELECT * FROM user u LEFT JOIN user_authority ua ON u.id=ua.user_id WHERE u." + fieldName + " = :" + fieldName)
+            .sql("SELECT * FROM jhi_user u LEFT JOIN jhi_user_authority ua ON u.id=ua.user_id WHERE u." + fieldName + " = :" + fieldName)
             .bind(fieldName, fieldValue)
             .map((row, metadata) ->
                 Tuples.of(r2dbcConverter.read(User.class, row, metadata), Optional.ofNullable(row.get("authority_name", String.class)))
